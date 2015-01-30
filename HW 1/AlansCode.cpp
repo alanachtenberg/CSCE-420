@@ -280,10 +280,10 @@ void land_c::move_animat(direction_type d)
   int newx=0,newy=0;
   
   problem_time++;
-  if (treeFound == true){
 
-	  switch (treeDirection){
-	  case north:
+  if (treeFound == true){
+	  switch (treeDirection){ //where the magic happens, this overides usual logic once a tree has been found
+	  case north:			  //new logic walks pandamat around the tree until it either finds another tree or food
 		  d = direction_type::east;//move east
 		  treeDirection = direction_type::nw;//new tree direction, releative to new position
 		  break;
@@ -308,15 +308,14 @@ void land_c::move_animat(direction_type d)
 		  treeDirection = direction_type::south;
 		  break;
 	  case west:
-		  d = direction_type::north;//move west
+		  d = direction_type::north;//move north
 		  treeDirection = direction_type::sw;
 		  break;
 	  case nw:
-		  d = direction_type::north;//move west
+		  d = direction_type::north;//move north
 		  treeDirection = direction_type::west;
 		  break;
 	  }
-	  treeFound = true;
   }
  
   switch(d)
@@ -372,7 +371,7 @@ void land_c::move_animat(direction_type d)
       case tree_f:		//no movement in case of a tree
 	treeFound = true;//we found a tree! lets remember that
 	treeDirection = d;//lets remember which direction that was as well
-	gain=-1.0;  //modify the tree directions to positive gain, because trees lead to food
+	gain=-1.0;
 	break;
       case food_f:
 	treeFound = false;//reset for next problem
