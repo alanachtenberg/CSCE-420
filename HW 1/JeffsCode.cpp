@@ -10,6 +10,9 @@
 */
 
 /*-------------------------- Cursor positioning code added by rgw ---------------*/
+#define _CRT_NONSTDC_NO_WARNINGS //preprocessor definitions for legacy code to run on visual studio 2013
+#define _CRT_SECURE_NO_WARNINGS //disables Std C and POSIX deprecation warnings repectively
+
 #include <iostream>
 #include <windows.h>
 #include <conio.h>

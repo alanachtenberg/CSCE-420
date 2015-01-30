@@ -367,13 +367,12 @@ void land_c::move_animat(direction_type d)
 	animaty=newy;
 	draw_animat();
 	
-	//--treeDirection;
-	gain=-0.3; //-0.01 -0.25
+	gain=-0.25; //-0.01 -0.25
 	break;
       case tree_f:		//no movement in case of a tree
 	treeFound = true;//we found a tree! lets remember that
 	treeDirection = d;//lets remember which direction that was as well
-	gain=.3;  //modify the tree directions to positive gain, because trees lead to food
+	gain=-1.0;  //modify the tree directions to positive gain, because trees lead to food
 	break;
       case food_f:
 	treeFound = false;//reset for next problem
