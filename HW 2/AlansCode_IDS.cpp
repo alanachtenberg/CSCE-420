@@ -133,7 +133,7 @@ class land_c
   private:
 
     char field[MAXY][MAXX+1];
-	int  food_dist_map[MAXY][MAXX + 1];
+	int  food_dist_map[MAXY][MAXX];
     int animatx,animaty;
 	
     void erase_animat();
@@ -150,6 +150,7 @@ class land_c
     land_c();
     void draw_field();
 	void draw_food_map();
+	int  get_Hval(direction_type d, int& s_animatx, int& s_animaty);
     void move_animat(direction_type d);
 	void search_animat(direction_type d, int& s_animatx, int& s_animaty);	// hack for search, note call by reference!!
   };
@@ -180,7 +181,7 @@ land_c::land_c()
    
   draw_field();
   populate_dist_map();
-  //draw_food_map(); debugging
+  draw_food_map();
   animatx=1;
   animaty=1;
   move_animat_randomly();
@@ -429,7 +430,51 @@ void land_c::move_animat(direction_type d)
 //********************************************************************************************
 	
 /*----------------------  Hack Code to "move" the agent during search --------------- */
+int land_c::get_Hval(direction_type d, int& s_animatx, int& s_animaty)	//note call by reference of x, y
+{
+	int newx, newy;
 
+	switch (d)
+	{
+	case nw:
+	case north:
+	case ne:
+		newy = s_animaty - 1;
+		break;
+	case west:
+	case east:
+		newy = s_animaty;
+		break;
+	case sw:
+	case south:
+	case se:
+		newy = s_animaty + 1;
+		break;
+	}
+
+	switch (d)
+	{
+	case nw:
+	case west:
+	case sw:
+		newx = s_animatx - 1;
+		break;
+	case north:
+	case south:
+		newx = s_animatx;
+		break;
+	case ne:
+	case east:
+	case se:
+		newx = s_animatx + 1;
+		break;
+	}
+	if (newx > MAXX - 1) newx = 0;
+	if (newx < 0) newx = MAXX - 1;
+	if (newy > MAXY - 1) newy = 0;
+	if (newy < 0) newy = MAXY - 1;
+	return food_dist_map[newy][newx];//returns the heuristic value at the x and y
+}
 void land_c::search_animat(direction_type d, int& s_animatx, int& s_animaty)	//note call by reference of x, y
 {
   int newx,newy;
@@ -716,7 +761,7 @@ demon *all_demons[NUM_DEMONS];
 	
 // rgw code for dept limited search
 
-result_type Recursive_DLS (Node pn, int d) {
+result_type Recursive_Astar_DLS (Node pn, int d) {
 	string ps = pn.getState();				//get state
 	std::size_t found = ps.find(goal);		//goal test
 	if (found!=std::string::npos) {
@@ -724,27 +769,66 @@ result_type Recursive_DLS (Node pn, int d) {
 		sequence.push(move_direction);		//direction to move to eat food
 		return success;
 	}
+	if (d > 3)
+		int j = 0;
 	if (d == 0) return cutoff;					//don't expand it if expansion is cutoff
-	
+	int x = pn.getx();						//create child Node for a move to this spot
+	int y = pn.gety();
 	bool cutoff_occured = false;
 	// now expand the corresponding move for each blank in the problem state 
 	int cnt = ps.length();
-	for (int dir = 0; dir < cnt; dir++) {		//consider each of the 8 directions
-		string feature = ps.substr(dir,1);		//expand Node one direction at a time 
+	
+
+	//SELECTION SORT instead of int in array it uses Heuristic value of direction to sort
+	//the heuristic vaules come from a hashmap food_dist_map that is generated when the field is constructed
+	int directions[8];//array of sorted directions by least Heuristic value first
+	for (int k = 0; k < 8; ++k)
+		directions[k] = k;//initialize direction array
+	int i, j;
+	int iMin;
+	/* advance the position through the entire array */
+	/*   (could do j < n-1 because single element is also min element) */
+	for (j = 0; j < 7; j++) {
+		/* find the min element in the unsorted a[j .. n-1] */
+		/* assume the min is the first element */
+		iMin = j;
+		/* test against elements after j to find the smallest */
+		for (i = j + 1; i < 8; i++) {
+			/* if this element is less, then it is the new minimum */
+			int Hval_i = land.get_Hval((direction_type)directions[i], x, y);
+			int Hval_iMin = land.get_Hval((direction_type)directions[iMin], x, y);
+			if (Hval_i <= Hval_iMin) {
+				/* found new minimum; remember its index */
+				iMin = i;
+			}
+		}
+
+		if (iMin != j) {//swap directions
+			int temp = directions[j];
+			directions[j] = directions[iMin];
+			directions[iMin] = temp;
+		}
+
+	}
+
+	//DIRECTIONS WITH LOWEST Hval's WILL BE SEARCHED FIRST
+	for (int i = 0; i < cnt; i++) {		//consider each of the 8 directions
+		string feature = ps.substr(directions[i], 1);		//expand Node one direction at a time 
 		if(0==feature.compare("T")) continue;		//skip trees in the expansion
 		assert(0==feature.compare(" "));			//feature should be a blank
 		
-		int x = pn.getx();						//create child Node for a move to this spot
-		int y = pn.gety();
-		land.search_animat((direction_type) dir, x, y);//create the new state and new x, y
+		land.search_animat((direction_type) directions[i], x, y);//create the new state and new x, y
 		char sarray[9];
-		for(int c = 0; c < sizeof(senses); c++) {sarray[c] = (char) senses[c];}	//assume senses is zero terminated?
+		for(int c = 0; c < sizeof(senses); c++) {
+			sarray[c] = (char) senses[c];//assume senses is zero terminated?
+		}	
 		string state(senses);					//convert new sense vector to a string
-		Node node(state, x, y, (direction_type) dir);
-		result_type result = Recursive_DLS( node, d-1);
-		if(result==cutoff) cutoff_occured = true;
-		else if(result != failure) {	//result == success
-			sequence.push((direction_type) dir);
+		Node node(state, x, y, (direction_type) directions[i]); //new branch nodes
+		result_type result = Recursive_Astar_DLS( node, d-1);
+		if(result==cutoff) 
+			cutoff_occured = true;
+		if(result != failure) {	//result == success
+			sequence.push((direction_type) directions[i]);
 			return result;
 		}
 	}
@@ -754,7 +838,7 @@ result_type Recursive_DLS (Node pn, int d) {
 	return failure;
 }
 result_type Depth_Limited_Search(Node problem_node, int limit) {	//p.88
-	return Recursive_DLS (problem_node, limit);
+	return Recursive_Astar_DLS (problem_node, limit);
 }
 //********************************************************************************************
 	
