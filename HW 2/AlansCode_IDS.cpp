@@ -12,6 +12,7 @@
 /*-------------------------- Cursor positioning code added by rgw ---------------*/
 #define _CRT_NONSTDC_NO_WARNINGS //preprocessor definitions for legacy code to run on visual studio 2013
 #define _CRT_SECURE_NO_WARNINGS //disables Std C and POSIX deprecation warnings repectively
+
 #include <iostream>
 #include <windows.h>
 #include <conio.h>
@@ -132,6 +133,7 @@ class land_c
   private:
 
     char field[MAXY][MAXX+1];
+	int  food_dist_map[MAXY][MAXX + 1];
     int animatx,animaty;
 	
     void erase_animat();
@@ -139,13 +141,16 @@ class land_c
     void move_animat_randomly();
     void print_data();
     void eat_food(int newx,int newy);
-
+	void populate_dist_map();
+	bool is_food(int x, int y);
+	bool is_tree(int x, int y);
+	void expand_food(int max_d, int x, int y);
   public:
 
     land_c();
     void draw_field();
+	void draw_food_map();
     void move_animat(direction_type d);
-	
 	void search_animat(direction_type d, int& s_animatx, int& s_animaty);	// hack for search, note call by reference!!
   };
 
@@ -172,15 +177,63 @@ land_c::land_c()
    strcpy(field[16],"                     T                     T              ");
    strcpy(field[17],"  F        TFT       F          F         F      TF       ");
    strcpy(field[18],"  TT                 T          TT       T       T        ");
-
-
+   
+  draw_field();
+  populate_dist_map();
+  //draw_food_map(); debugging
   animatx=1;
   animaty=1;
   move_animat_randomly();
   problem_time=0;
-
+  
 }
 
+void land_c::populate_dist_map(){
+	const int max_d = 5;//max distance a space can be from a tree
+	for (int i = 0; i < MAXX; ++i)
+		for (int j = 0; j < MAXY; ++j)
+		{
+			food_dist_map[j][i] = INT_MAX;//init array to infinite until we know how far food is
+		}
+	for (int i = 0; i < MAXX; ++i){
+		for (int j = 0; j < MAXY; ++j){
+			if (is_food(i, j))
+				expand_food(max_d, i, j);//5 is max distance around food to spaces
+		}
+	}
+}
+
+
+bool land_c::is_food(int x, int y){
+	if (field[y][x] == 'F')//modulus max so that wrap around is easy to deal with
+		return true;
+	else
+		return false;
+}
+bool land_c::is_tree(int x, int y){
+	if (field[y][x] == 'T')
+		return true;
+	else
+		return false;
+
+}
+void land_c::expand_food(int max_d, int x, int y){//populates the spaces around food with the distance to the food
+	
+	for (int i = -max_d; i < max_d; ++i){
+		int new_x = ((x + i) + MAXX) % MAXX;// add MAXX to make remainder operator act as modulus
+		for (int j = -max_d; j < max_d; ++j){
+			int new_y = ((y + j) + MAXY) % MAXY;//gets the upper left hand corner of our area on first iteration
+			if(is_food(new_x, new_y))
+				food_dist_map[new_y][new_x] = 0;
+			else if (is_tree(new_x, new_y))
+				food_dist_map[new_y][new_x] = 1;//might change tree value later, not sure
+			else if (max(abs(i), abs(j)) <= food_dist_map[new_y][new_x]){
+				int value =max(abs(i), abs(j));
+				food_dist_map[new_y][new_x] = value; //because of the rules of movement the max i or j is equal to the number of moves to get to food
+			}
+		}
+	}
+}
 
 void land_c::draw_field()
 {
@@ -191,6 +244,20 @@ void land_c::draw_field()
   for (index=0;index<MAXY;index++)
     puts(field[index]);
   return;
+
+}
+void land_c::draw_food_map()
+{
+	int index;
+
+	clrscr();
+
+	for (index = 0; index < MAXY; index++){
+		for (int j = 0; j < MAXX; ++j)
+			printf("%d",food_dist_map[index][j]);
+		putch('\n');
+	}
+	return;
 
 }
 
@@ -358,6 +425,7 @@ void land_c::move_animat(direction_type d)
 
   return;
 }
+
 //********************************************************************************************
 	
 /*----------------------  Hack Code to "move" the agent during search --------------- */
