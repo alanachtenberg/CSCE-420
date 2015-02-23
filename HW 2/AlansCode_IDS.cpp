@@ -16,6 +16,7 @@
 #include <iostream>
 #include <windows.h>
 #include <conio.h>
+#include <stdio.h>
 
 
 /*------------------------- Jeff's Code --------------------------*/
@@ -182,6 +183,12 @@ land_c::land_c()
   draw_field();
   populate_dist_map();
   draw_food_map();
+  char test[256]="";
+  printf("Above is the runtime generated hash map for the distance from any space to food.\n 0's are food's and 9's are trees for simple reference\n");
+  printf("values of the trees do not matter since it is not a valid space for our pandamat\n");
+  printf("input any char to continue\n");
+	  while (test[0]==NULL)
+		  scanf("%s",test);
   animatx=1;
   animaty=1;
   move_animat_randomly();
@@ -227,7 +234,7 @@ void land_c::expand_food(int max_d, int x, int y){//populates the spaces around 
 			if(is_food(new_x, new_y))
 				food_dist_map[new_y][new_x] = 0;
 			else if (is_tree(new_x, new_y))
-				food_dist_map[new_y][new_x] = 1;//might change tree value later, not sure
+				food_dist_map[new_y][new_x] = 9;//might change tree value later, not sure
 			else if (max(abs(i), abs(j)) <= food_dist_map[new_y][new_x]){
 				int value =max(abs(i), abs(j));
 				food_dist_map[new_y][new_x] = value; //because of the rules of movement the max i or j is equal to the number of moves to get to food
@@ -250,8 +257,6 @@ void land_c::draw_field()
 void land_c::draw_food_map()
 {
 	int index;
-
-	clrscr();
 
 	for (index = 0; index < MAXY; index++){
 		for (int j = 0; j < MAXX; ++j)
@@ -769,8 +774,7 @@ result_type Recursive_Astar_DLS (Node pn, int d) {
 		sequence.push(move_direction);		//direction to move to eat food
 		return success;
 	}
-	if (d > 3)
-		int j = 0;
+	
 	if (d == 0) return cutoff;					//don't expand it if expansion is cutoff
 	int x = pn.getx();						//create child Node for a move to this spot
 	int y = pn.gety();
@@ -778,7 +782,9 @@ result_type Recursive_Astar_DLS (Node pn, int d) {
 	// now expand the corresponding move for each blank in the problem state 
 	int cnt = ps.length();
 	
-
+	if (d > 5){
+		string what;
+	}
 	//SELECTION SORT instead of int in array it uses Heuristic value of direction to sort
 	//the heuristic vaules come from a hashmap food_dist_map that is generated when the field is constructed
 	int directions[8];//array of sorted directions by least Heuristic value first
@@ -797,7 +803,7 @@ result_type Recursive_Astar_DLS (Node pn, int d) {
 			/* if this element is less, then it is the new minimum */
 			int Hval_i = land.get_Hval((direction_type)directions[i], x, y);
 			int Hval_iMin = land.get_Hval((direction_type)directions[iMin], x, y);
-			if (Hval_i <= Hval_iMin) {
+			if (Hval_i < Hval_iMin) {
 				/* found new minimum; remember its index */
 				iMin = i;
 			}
