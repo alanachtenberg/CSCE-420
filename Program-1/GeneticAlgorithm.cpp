@@ -10,6 +10,8 @@ Pandemonium controlling an animat.
 */
 
 /*-------------------------- Cursor positioning code added by rgw ---------------*/
+#define _CRT_NONSTDC_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
 #include <windows.h>
 #include <conio.h>
@@ -682,45 +684,61 @@ void make_text()
 }
 
 
-int main()
-{
-	int key;
+class Jeffs_Code{
 
-	//_setcursortype(_NOCURSOR);		//commented out by rgw for the time being
-	srand((unsigned)time(0)); //randomize();
-	land.draw_field();
-	initialize_pandemonium();
+public:
+	Jeffs_Code(float f1, float f2, float f3, float f4, float f5){
 
-	//for (key=0;key<NUM_DEMONS;key++)
-	//  all_demons[key]->print_stuff();
-
-	key = 0;
-	while (key != 27) //not escape
-	{
-		if (speed == 1)
-			//delay(ms) call replaced by rgw
-			Sleep(100);      //delay(100);
-		iterate_pandemonium();
-		key = 0;
-		if (kbhit()) key = getch();
-		if ((key == 'G') || (key == 'g'))
-			switch (graph_mode)
-		{
-			case 0:
-				graph_mode = 1;
-				make_graphics();
-				break;
-			case 1:
-				graph_mode = 0;
-				make_text();
-				break;
-		}
-		if ((key == 's') || (key == 'S'))
-			speed = 1 - speed;
 	}
 
-	if (graph_mode) make_text();
-	gotoxy(1, 24);
-	//_setcursortype(_NORMALCURSOR);	//commented out by rgw for the time being
-	return 0;
+	int Jeffs_main()
+	{
+		int key;
+
+		//_setcursortype(_NOCURSOR);		//commented out by rgw for the time being
+		srand((unsigned)time(0)); //randomize();
+		land.draw_field();
+		initialize_pandemonium();
+
+		//for (key=0;key<NUM_DEMONS;key++)
+		//  all_demons[key]->print_stuff();
+
+		key = 0;
+		while (key != 27) //not escape
+		{
+			if (speed == 1)
+				//delay(ms) call replaced by rgw
+				Sleep(100);      //delay(100);
+			iterate_pandemonium();
+			key = 0;
+			if (kbhit()) key = getch();
+			if ((key == 'G') || (key == 'g'))
+				switch (graph_mode)
+			{
+				case 0:
+					graph_mode = 1;
+					make_graphics();
+					break;
+				case 1:
+					graph_mode = 0;
+					make_text();
+					break;
+			}
+			if ((key == 's') || (key == 'S'))
+				speed = 1 - speed;
+		}
+
+		if (graph_mode) make_text();
+		gotoxy(1, 24);
+		//_setcursortype(_NORMALCURSOR);	//commented out by rgw for the time being
+		return 0;
+	}
+
+};
+
+
+int main(){
+
+	Jeffs_Code jeffs_code(0,0,0,0,0);
+	jeffs_code.Jeffs_main();
 }
