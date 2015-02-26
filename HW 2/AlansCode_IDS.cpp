@@ -415,7 +415,7 @@ void land_c::move_animat(direction_type d)
 	eat_food(newy,newx);
 	gain=2.25;  // 0.2   2.0
 	move_animat_randomly();
-	print_data();
+	//print_data(); dont print anymore
 	break;
     }
   //update the sensors based on new animat position

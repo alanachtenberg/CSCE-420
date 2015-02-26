@@ -16,7 +16,27 @@ Pandemonium controlling an animat.
 #include <windows.h>
 #include <conio.h>
 
+
+#define POP_SIZE 25
+#define NUM_GENERATIONS 20
+//#define DRAW_ANIMAT uncomment line to draw animat
+
 using namespace std;
+
+//declaration for new class jeffs_code, replaces main() with class interface
+class Jeffs_Code{
+public:
+	float tree_gain, food_gain, space_gain;//public static object, easy to access in the rest of the program
+	float built_in_vol, vol_divisor;
+	int problems_solved;
+	Jeffs_Code();//default constructor
+	Jeffs_Code(float tree, float food, float space, float BiV, float divisor);
+	int Jeffs_main();
+};
+
+//declarations of static jeffs code members
+Jeffs_Code* current_ind;//pointer to current instance of jeffs_code
+
 
 void gotoxy(int x, int y)
 {
@@ -138,7 +158,7 @@ public:
 
 	land_c();
 	void draw_field();
-	void move_animat(direction_type d);
+	bool move_animat(direction_type d);
 
 };
 
@@ -237,35 +257,43 @@ void land_c::print_data()
 
 void land_c::move_animat_randomly()
 {
+#ifdef DRAW_ANIMAT
 	erase_animat();
+#endif
 	do
 	{
 		//random(n) function call replaced by rgw
 		animatx = 1.0 * (MAXX - 1) * rand() / RAND_MAX; //random(MAXX); //random(N) returns a random number from 0 to N-1
 		animaty = 1.0 * (MAXY - 1) * rand() / RAND_MAX;//random(MAXY);
 	} while (field[animaty][animatx] != none_f);	//keep moving until we hit a blank
+#ifdef DRAW_ANIMAT
 	draw_animat();
+#endif
 }
 
 
 void land_c::eat_food(int newy, int newx)
 {
 	if (speed == 0) return;
+#ifdef DRAW_ANIMAT
 	gotoxy(newx + 1, newy + 1);	//why + 1??
 	//textcolor(YELLOW);		//commented out by rgw for the time being
 	putch('X');
+#endif
 	//delay(ms) call replaced by rgw
 	Sleep(500);      //delay(500);
+#ifdef DRAW_ANIMAT
 	gotoxy(newx + 1, newy + 1);
 	//textcolor(LIGHTGRAY);	//commented out by rgw for the time being
 	putch('F');
+#endif
 
 }
 
-void land_c::move_animat(direction_type d)
+bool land_c::move_animat(direction_type d)
 {
 	int newx, newy;
-
+	bool food_found = false;
 	problem_time++;
 
 	switch (d)
@@ -311,20 +339,27 @@ void land_c::move_animat(direction_type d)
 	switch (field[newy][newx])	//move is finalized based on current field value, why not senses[] value??
 	{
 	case none_f:
+#ifdef DRAW_ANIMAT
 		erase_animat();
+#endif
 		animatx = newx;
 		animaty = newy;
+#ifdef DRAW_ANIMAT
 		draw_animat();
-		gain = -0.25; //-0.01 -0.25
+#endif
+		gain = current_ind->space_gain; //-0.01 -0.25
 		break;
 	case tree_f:		//no movement in case of a tree
-		gain = -1.0;  //-0.1  -1.0
+		gain = current_ind->tree_gain;  //-0.1  -1.0
 		break;
 	case food_f:
 		eat_food(newy, newx);
-		gain = 2.25;  // 0.2   2.0
+		gain = current_ind->food_gain;  // 0.2   2.0
 		move_animat_randomly();
+#ifdef DRAW_ANIMAT
 		print_data();
+#endif
+		food_found = true;//return the fact that food was found so that we can keep a count in main()
 		break;
 	}
 	//update the sensors based on new animat position
@@ -338,7 +373,7 @@ void land_c::move_animat(direction_type d)
 	senses[7] = field[(MAXY + animaty - 1) % MAXY][(MAXX + animatx - 1) % MAXX]; //nw
 
 
-	return;
+	return food_found;
 }
 
 
@@ -400,15 +435,15 @@ void demon::get_number(int num)
 {
 	my_number = num;
 	//random(n) call replaced by rgw
-	built_in_volume = (100.0 - 1.0) / 10.0 * rand() / RAND_MAX; //(float)random(100)/10;////random(N) returns a random number from 0 to N-1
+	//built_in_volume = (100.0 - 1.0) / 10.0 * rand() / RAND_MAX; //(float)random(100)/10;////random(N) returns a random number from 0 to N-1
+	built_in_volume = current_ind->built_in_vol;
 	return;
 }
 
 void demon::adjust_strengths()
 {
 	int index;
-
-	built_in_volume += gain / 10.0;
+	built_in_volume += gain / current_ind->vol_divisor;
 	for (index = 0; index<SIZE_ARENA; index++)
 		connections[my_number][arena[index]] += gain;
 	return;
@@ -475,7 +510,7 @@ private:
 	direction_type direction;
 public:
 	action_demon();
-	void take_action();
+	bool take_action();
 	virtual void calc_volume();
 	virtual void print_stuff();
 };
@@ -486,11 +521,11 @@ action_demon::action_demon()
 	ga_direction++;
 }
 
-void action_demon::take_action()
+bool action_demon::take_action()
 {
 	//gotoxy(1,20);
 	//printf("moving %d   time %d   \n",direction,problem_time);
-	land.move_animat(direction);
+	return land.move_animat(direction);
 }
 
 void action_demon::calc_volume()
@@ -515,7 +550,7 @@ action_demon action_demons[NUM_ACTION];
 demon *all_demons[NUM_DEMONS];
 
 
-void iterate_pandemonium(void)
+bool iterate_pandemonium(void)
 {
 	int index, arena_index;
 	float arena_volumes[NUM_DEMONS];
@@ -593,7 +628,7 @@ void iterate_pandemonium(void)
 	}
 
 	//take action
-	action_demons[arena[ARENA_SENSE + ARENA_OTHER] - NUM_SENSE - NUM_OTHER].take_action();
+	bool problem_solved=action_demons[arena[ARENA_SENSE + ARENA_OTHER] - NUM_SENSE - NUM_OTHER].take_action();
 	//gotoxy(1,21);   // used for debugging
 	//for (index=0;index<SIZE_ARENA;index++)
 	//  printf(" %d %2.2f\t",arena[index],arena_volumes[index]);
@@ -602,7 +637,7 @@ void iterate_pandemonium(void)
 	for (index = 0; index<SIZE_ARENA; index++)
 		all_demons[arena[index]]->adjust_strengths();
 
-	return;
+	return problem_solved;
 }
 
 void initialize_pandemonium()
@@ -626,55 +661,6 @@ void initialize_pandemonium()
 
 /*---------------------- main ------------------------------------------*/
 
-void make_graphics()	//graphics code commented out by rgw
-{
-	/*  int index,current_x,count;
-	float average;
-	int gdriver = DETECT, gmode, errorcode;
-
-	initgraph(&gdriver, &gmode, "");
-	errorcode = graphresult();
-	if (errorcode != grOk)  /* an error occurred */
-	/*   {
-	gotoxy(1,23);
-	printf("Graphics error: %s\n", grapherrormsg(errorcode));
-	graph_mode=0;
-	return;
-	}
-
-	max_x=getmaxx();
-	max_y=getmaxy();
-
-	line(0,0,0,max_y);
-	line(0,max_y,max_x,max_y);
-	for (index=0;index<GRAPH_SIZE_Y;index+=5)
-	line( 0, max_y-max_y/(float)GRAPH_SIZE_Y*index,
-	10, max_y-max_y/(float)GRAPH_SIZE_Y*index);
-	for (index=0;index<GRAPH_SIZE_X;index+=1000)
-	line(max_x/(float)GRAPH_SIZE_X*index,max_y,
-	max_x/(float)GRAPH_SIZE_X*index,max_y-10);
-	index=0;
-	for (current_x=0;current_x<problem_number*max_x/(float)GRAPH_SIZE_X;current_x+=GRANULARITY)
-	{
-	average=0.0;
-	for (count=0;index<current_x*GRAPH_SIZE_X/(float)max_x;index++,count++)
-	{
-	if (index>GRAPH_SIZE_X) break;
-	average+=graph_data[index];
-	}
-	if (count==0) continue;
-	if (index>GRAPH_SIZE_X) break;
-	average/=count;
-	lineto(current_x,max_y-max_y/(float)GRAPH_SIZE_Y*average);
-	}
-	*/
-	/* for (index=2;index<problem_number;index++)
-	line(max_x/(float)GRAPH_SIZE_X*index,
-	max_y-max_y/(float)GRAPH_SIZE_Y*graph_data[index],
-	max_x/(float)GRAPH_SIZE_X*(index-1),
-	max_y-max_y/(float)GRAPH_SIZE_Y*graph_data[index-1]);*/
-
-}
 
 void make_text()
 {
@@ -684,61 +670,123 @@ void make_text()
 }
 
 
-class Jeffs_Code{
 
-public:
-	Jeffs_Code(float f1, float f2, float f3, float f4, float f5){
-
+Jeffs_Code::Jeffs_Code(){
+	tree_gain = 0;
+	food_gain = 0;
+	space_gain = 0;
+	built_in_vol = 0;
+	vol_divisor = 0;
+	problems_solved = 0;
+}
+	Jeffs_Code::Jeffs_Code(float tree, float food, float space, float BiV, float divisor){
+		tree_gain = tree;
+		food_gain = food;
+		space_gain = space;
+		built_in_vol = BiV;
+		vol_divisor = divisor;
+		problems_solved = 0;
 	}
 
-	int Jeffs_main()
+	int Jeffs_Code::Jeffs_main()
 	{
+		current_ind = this;//set global pointer to current individual, allows functions to access jeffs_code members
 		int key;
 
 		//_setcursortype(_NOCURSOR);		//commented out by rgw for the time being
-		srand((unsigned)time(0)); //randomize();
+#ifdef DRAW_ANIMAT
 		land.draw_field();
+#endif
 		initialize_pandemonium();
 
 		//for (key=0;key<NUM_DEMONS;key++)
 		//  all_demons[key]->print_stuff();
 
 		key = 0;
-		while (key != 27) //not escape
+		int count=1000;//number of moves allowed
+		while (key != 27&& count>0) //not escape
 		{
 			if (speed == 1)
 				//delay(ms) call replaced by rgw
 				Sleep(100);      //delay(100);
-			iterate_pandemonium();
+			if (iterate_pandemonium())
+				++problems_solved;//increment problems solved if iterate pandemonium returns true(food was found)
 			key = 0;
 			if (kbhit()) key = getch();
+#ifdef DRAW_ANIMAT
 			if ((key == 'G') || (key == 'g'))
 				switch (graph_mode)
 			{
 				case 0:
 					graph_mode = 1;
-					make_graphics();
+					//make_graphics();
 					break;
 				case 1:
 					graph_mode = 0;
 					make_text();
 					break;
 			}
+#endif
 			if ((key == 's') || (key == 'S'))
 				speed = 1 - speed;
+			--count;//iteration complete
 		}
-
+#ifdef DRAW_ANIMAT
 		if (graph_mode) make_text();
 		gotoxy(1, 24);
+#endif
 		//_setcursortype(_NORMALCURSOR);	//commented out by rgw for the time being
-		return 0;
+		return problems_solved;//return number of problems solved in 1000 moves
 	}
 
-};
+	
 
+	//Sets population to random allele values
+	void init_population(Jeffs_Code* pop, int size){
+		for (int i = 0; i < size; ++i)
+		{
+			float tGain = (rand() % 1000) / 100; //gets a float between 10 and 0 with accuracy to .01
+			float sGain = (rand() % 1000) / 100;
+			tGain = -max(tGain, .01);//sets tree gain to a value between -.01 and -10
+			sGain = -max(sGain, .01);//sets space gain to a value between -.01 and -10 
+			
+			float fGain = (rand() % 10000)/100;
+			float vol = (rand() % 10000) / 100;
+			fGain = max(fGain, 1);//sets food gain to a value between 1 and 100 with accuracy to .01
+			vol = max(vol, 1);
+			
+			float divisor = (rand() % 5000) / 100;//gets a float between 0 and 50
+			divisor = max(divisor, 2);//sets divisor to value between 2 and 50 accuracy to .01
 
-int main(){
+			pop[i] = Jeffs_Code(tGain,fGain,sGain,vol,divisor);
+		}
+	}
+	
+	void keep_window_open(){
+		char exit = '\0';
+		while (exit == '\0'){
+			cout << "input char to exit\n";
+			cin >> exit;
+		}
+	}
 
-	Jeffs_Code jeffs_code(0,0,0,0,0);
-	jeffs_code.Jeffs_main();
+	int main(){
+		Jeffs_Code population[POP_SIZE];//reserve mem for population
+		int scores[POP_SIZE];//fitness score corresponding to INDIVIDUAL
+		unsigned int seed_input;
+		cout << "Input unsigned integer for random seed\n";
+		cin >> seed_input;
+		srand(seed_input);
+		init_population(population,POP_SIZE);//initialize population
+
+		for (int i = 0; i < NUM_GENERATIONS; ++i){
+			printf("GENERATION %d:\n", i + 1);
+			for (int j = 0; j < POP_SIZE; ++j){
+				scores[j] = population[j].Jeffs_main();
+				printf("Individual %d problems solved in 1000 moves: %d\n", j + 1, scores[j]);
+			}
+		}
+
+		keep_window_open();
+		return 0;
 }
