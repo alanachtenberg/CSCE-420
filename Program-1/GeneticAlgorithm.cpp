@@ -19,7 +19,10 @@ Pandemonium controlling an animat.
 
 #define POP_SIZE 25
 #define NUM_GENERATIONS 20
+#define NUM_ALLELES 5
+#define MOVE_FACTOR 2 //factor to determine problems solved in 1000 moves, lower value is faster but less accurate
 //#define DRAW_ANIMAT uncomment line to draw animat
+//#define PRINT_ALL //uncomment to print all individuals in population instead of just the fittest
 
 using namespace std;
 
@@ -31,7 +34,10 @@ public:
 	int problems_solved;
 	Jeffs_Code();//default constructor
 	Jeffs_Code(float tree, float food, float space, float BiV, float divisor);
+	
 	int Jeffs_main();
+	void get_attributes(float* buffer);
+	void print();//prints constants and problems solved
 };
 
 //declarations of static jeffs code members
@@ -489,10 +495,8 @@ sense_demon::sense_demon()
 void sense_demon::calc_volume()
 {
 	int index;
-
-	//volume=built_in_volume;
 	volume = 0.0;
-	if (senses[direction] == feature) volume += 10.0;
+	if (senses[direction] == feature) volume += 10;
 	// for (index=0;index<SIZE_ARENA;index++)
 	//   volume+=connections[my_number][arena[index]];
 }
@@ -703,7 +707,7 @@ Jeffs_Code::Jeffs_Code(){
 		//  all_demons[key]->print_stuff();
 
 		key = 0;
-		int count=1000;//number of moves allowed
+		int count=1000*MOVE_FACTOR;//number of moves allowed will be divided by 2 later when averaged
 		while (key != 27&& count>0) //not escape
 		{
 			if (speed == 1)
@@ -735,33 +739,126 @@ Jeffs_Code::Jeffs_Code(){
 		if (graph_mode) make_text();
 		gotoxy(1, 24);
 #endif
+		problems_solved=problems_solved/MOVE_FACTOR;
 		//_setcursortype(_NORMALCURSOR);	//commented out by rgw for the time being
-		return problems_solved;//return number of problems solved in 1000 moves
+		return problems_solved;//return average number of problems solved in 1000 moves
 	}
 
-	
-
+	void Jeffs_Code::get_attributes(float* _buffer){
+		_buffer[0] = tree_gain;
+		_buffer[1] = food_gain;
+		_buffer[2] = space_gain;
+		_buffer[3] = built_in_vol;
+		_buffer[4] = vol_divisor;
+	}
+	void Jeffs_Code::print(){
+		printf("%.2f %.2f %.2f %.2f %.2f Avg Problems solved in 1000 moves: %d\n\n", tree_gain, food_gain, space_gain, built_in_vol, vol_divisor, problems_solved/2);
+	}
+	//returns random value for tree or space gain
+	float rand_tree_space(){
+		float f = (rand() % 1000) / 100.0; //gets a float between 10 and 0 with accuracy to .01
+		f = -max(f, .01);//sets gain to a value between -.01 and -10
+		return f;
+	}
+	float rand_food_vol(){
+		float f = (rand() % 10000) / 100.0;//gets float between 0 and 100
+		f = max(f, 1);//sets gain to a value between 1 and 100 with accuracy to .01
+		return f;
+	}
+	float rand_divisor(){
+		float f = (rand() % 5000) / 100.0;//gets a float between 0 and 50
+		f = max(f, 2);//sets divisor to value between 2 and 50 accuracy to .01
+		return f;
+	}
 	//Sets population to random allele values
-	void init_population(Jeffs_Code* pop, int size){
-		for (int i = 0; i < size; ++i)
+	void init_population(Jeffs_Code* _pop, int _size){
+		for (int i = 0; i < _size; ++i)
 		{
-			float tGain = (rand() % 1000) / 100; //gets a float between 10 and 0 with accuracy to .01
-			float sGain = (rand() % 1000) / 100;
-			tGain = -max(tGain, .01);//sets tree gain to a value between -.01 and -10
-			sGain = -max(sGain, .01);//sets space gain to a value between -.01 and -10 
-			
-			float fGain = (rand() % 10000)/100;
-			float vol = (rand() % 10000) / 100;
-			fGain = max(fGain, 1);//sets food gain to a value between 1 and 100 with accuracy to .01
-			vol = max(vol, 1);
-			
-			float divisor = (rand() % 5000) / 100;//gets a float between 0 and 50
-			divisor = max(divisor, 2);//sets divisor to value between 2 and 50 accuracy to .01
-
-			pop[i] = Jeffs_Code(tGain,fGain,sGain,vol,divisor);
+			float tGain = rand_tree_space();
+			float sGain = rand_tree_space();
+			float fGain = rand_food_vol();
+			float vol = rand_food_vol();
+			float divisor = rand_divisor();
+			_pop[i] = Jeffs_Code(tGain,fGain,sGain,vol,divisor);
 		}
 	}
-	
+
+	//GeneticAlgorithm random selection
+	int random_selection(Jeffs_Code* _pop, int* _scores, int _count, int avoid_index=-1){
+		//picks the individual with the max fitness among #(count) random individuals
+		int index = 0;
+		int max_so_far = 0;
+		while (_count > 0){//
+			int curr_index=rand() % POP_SIZE;//get random index between 0 and 25
+			while (curr_index == avoid_index)
+				curr_index = rand() % POP_SIZE;//if we want it to not be a specific index ie, we want different parents
+			if (_scores[curr_index] > max_so_far){
+				index = curr_index;
+				max_so_far = _scores[curr_index];
+			}
+			--_count;
+		}
+		return index;
+	}
+	Jeffs_Code reproduce(Jeffs_Code _x, Jeffs_Code _y){
+		float x_attributes[NUM_ALLELES];
+		float y_attributes[NUM_ALLELES];
+		float child_attributes[NUM_ALLELES];
+
+		_x.get_attributes(x_attributes);
+		_y.get_attributes(y_attributes);
+		
+		for (int i = 0; i < NUM_ALLELES; ++i)
+			if (rand()%2==0)//50 percent chance to get x attribute or y attribute
+				child_attributes[i] = x_attributes[i];//inherit the first c alleles from x
+			else	
+				child_attributes[i] = y_attributes[i];//inherit the last n-c alleles from y
+		
+		//return a new child
+		return Jeffs_Code(child_attributes[0], child_attributes[1], child_attributes[2], child_attributes[3], child_attributes[4]);
+	}
+	Jeffs_Code& mutate(Jeffs_Code& _child){
+		int index = rand() % NUM_ALLELES;//get random index of gene to mutate
+		float attributes[NUM_ALLELES];//buffer for attributes
+		_child.get_attributes(attributes);//fills buffer with childs genes
+		bool add = false;
+		if (rand()%100>50)
+			add = true;
+		switch (index){ //MUTATE
+		case 0://tree
+			if (add)
+				_child.tree_gain = min(_child.tree_gain + rand() % 100 / 100.0, -.01);//set tree_gain to new random gene
+			else
+				_child.tree_gain = max(_child.tree_gain - rand() % 100 / 100.0, -10.0);
+			break;
+		case 1://food
+			if (add)
+				_child.food_gain = max(_child.food_gain + rand() % 100 / 25.0, 100.0);//set tree_gain to new random gene
+			else
+				_child.food_gain = max(_child.food_gain - rand() % 100 / 25.0, 1.0);
+			break;
+		case 2:
+			if (add)
+				_child.space_gain = min(_child.space_gain + rand() % 100 / 100.0, -.01);//set tree_gain to new random gene
+			else
+				_child.space_gain = max(_child.space_gain - rand() % 100 / 100.0, -10.0);
+			break;
+		case 3:
+			if (add)
+				_child.built_in_vol = max(_child.built_in_vol + rand() % 100 / 25.0, 100.0);//set tree_gain to new random gene
+			else
+				_child.built_in_vol = max(_child.built_in_vol - rand() % 100 / 25.0, 1.0);
+			break;
+		case 4:
+			if (add)
+				_child.vol_divisor = max(_child.vol_divisor + rand() % 100 / 25.0, 50.0);//set tree_gain to new random gene
+			else
+				_child.vol_divisor = max(_child.vol_divisor - rand() % 100 / 25.0, 2.0);
+			break;
+		}
+		return _child;
+	}
+
 	void keep_window_open(){
 		char exit = '\0';
 		while (exit == '\0'){
@@ -769,24 +866,71 @@ Jeffs_Code::Jeffs_Code(){
 			cin >> exit;
 		}
 	}
-
+	int get_max_index(int* _values, int _size){
+		int index = INT_MIN;
+		int max_so_far = 0;//only dealing with positive numbers
+		for (int i = 0; i < _size; ++i){
+			if (_values[i]>max_so_far){
+				max_so_far = _values[i];
+				index = i;
+			}
+		}
+		return index;
+	}
 	int main(){
-		Jeffs_Code population[POP_SIZE];//reserve mem for population
+		Jeffs_Code* population= new Jeffs_Code[POP_SIZE];
 		int scores[POP_SIZE];//fitness score corresponding to INDIVIDUAL
 		unsigned int seed_input;
-		cout << "Input unsigned integer for random seed\n";
+		cout << "To display all individuals of every generation uncomment #define PRINT_ALL\n";
+		cout << "Change the value of #define MOVE_FACTOR if you wish to change the number of times we run 1000 moves\n";
+		cout << "For example the average number of problems solved is equal to (Prob_solved in 1000*factor)/factor\n";
+		cout << "Lowering the factor increases speed but reduces accuracy\n\n";
+		cout << "Input unsigned integer (seed) for random int generation\n\n";
 		cin >> seed_input;
-		srand(seed_input);
+		srand((unsigned int) time(0));
 		init_population(population,POP_SIZE);//initialize population
 
 		for (int i = 0; i < NUM_GENERATIONS; ++i){
-			printf("GENERATION %d:\n", i + 1);
+			printf("\nGENERATION %d:\n", i + 1);
+			printf("------------------------------------------------------\n");
 			for (int j = 0; j < POP_SIZE; ++j){
-				scores[j] = population[j].Jeffs_main();
-				printf("Individual %d problems solved in 1000 moves: %d\n", j + 1, scores[j]);
+				scores[j] = population[j].Jeffs_main();//calculates fitness scores of each individual
+#ifdef PRINT_ALL
+				printf("Individual %d\n", j + 1); //for printing every individual
+				printf("---------------\n");
+				population[j].print();
+#endif			
 			}
+#ifndef PRINT_ALL
+			int index = get_max_index(scores, POP_SIZE);
+			printf("Fittist individual of this generation is #%d\n", index);
+			population[index].print();
+#endif
+
+			//GENETIC ALGORITHM IMPLEMENTATION BELOW
+			Jeffs_Code* new_population = new Jeffs_Code[POP_SIZE];//new_population, initially empty
+			Jeffs_Code x, y, child;
+			for (int i = 0; i < POP_SIZE; ++i){
+				do
+				{
+					int x_index = random_selection(population, scores, POP_SIZE / 4);//half the population is the number of members in the population to randomly select from
+					x = population[x_index];//parent with max fitness(problems solved) among the random # of parents will be selected
+					int y_index = random_selection(population, scores, POP_SIZE / 4, x_index);
+					y = population[y_index];	//we pass in x_index to prevent selection being identical, inother words we must have 2 distinct parents
+
+					child = reproduce(x, y);//randomly crossover genes between parents to produce child
+					if ((rand() % 100) <= 30)//30 percent probability of mutation
+						mutate(child);//randomly mutates a single gene of the child
+				} while (child.Jeffs_main() < 20);
+				
+				new_population[i] = child;//add child to new pop
+			}
+			
+			delete population;//get rid of old population
+			population = new_population;//set new population to new population
 		}
 
 		keep_window_open();
+		delete population;//clean up
 		return 0;
 }
