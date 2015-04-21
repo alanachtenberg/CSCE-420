@@ -40,7 +40,7 @@ public class BotStarter implements Bot {
 		// Get the ordinal values of the cards in your hand
 		int height1 = hand.getCard(0).getHeight().ordinal();
 		int height2 = hand.getCard(1).getHeight().ordinal();
-		
+
 		// Return the appropriate move according to our amazing strategy
 		if( height1 > 9 || height2 > 9 ) {
 			return new PokerMove(state.getMyName(), "raise", 2*state.getBigBlind());

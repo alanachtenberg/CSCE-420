@@ -91,7 +91,8 @@ public class RunPoker
 		bots.add(player2);
 
 		//gametype is omaha tournament (with two players):
-		gameType = 18;
+		//gameType = 18;
+		gameType=15;//15 is the texas hold em game type
 		//number of hands is unlimited
 		numberOfHands = -1;
 		//one winner
