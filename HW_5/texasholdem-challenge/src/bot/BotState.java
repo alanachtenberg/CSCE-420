@@ -58,15 +58,15 @@ public class BotState {
 	 */
 	protected void updateSetting(String key, String value) {
 		settings.put(key, value);
-		if( key.equals("your_bot") ) {
+		if( key.equals("yourBot") ) {
 			myName = value;
-		} else if ( key.equals("timebank") ) {			// Maximum amount of time your bot can take for one response
+		} else if ( key.equals("timeBank") ) {			// Maximum amount of time your bot can take for one response
 			timeBank = Integer.valueOf(value);
-		} else if ( key.equals("time_per_move") ) {		// The extra amount of time you get per response
+		} else if ( key.equals("timePerMove") ) {		// The extra amount of time you get per response
 			timePerMove = Integer.valueOf(value);
-		} else if ( key.equals("hands_per_level") ) {	// Number of rounds before the blinds are increased
+		} else if ( key.equals("handsPerLevel") ) {	// Number of rounds before the blinds are increased
 			handsPerLevel = Integer.valueOf(value);
-		} else if ( key.equals("starting_stack") ) {	// Starting stack for each bot
+		} else if ( key.equals("startingStack") ) {	// Starting stack for each bot
 			myStack = Integer.valueOf(value);
 			opponentStack = Integer.valueOf(value);
 		} else {
@@ -84,15 +84,15 @@ public class BotState {
 			round = Integer.valueOf(value);
 			System.err.println("Round " + round);   //printing the round to the output for debugging
             resetRoundVariables();
-		} else if( key.equals("small_blind") ) {	// Value of the small blind
+		} else if( key.equals("smallBlind") ) {	// Value of the small blind
 			smallBlind = Integer.valueOf(value);
-		} else if( key.equals("big_blind") ) {		// Value of the big blind
+		} else if( key.equals("bigBlind") ) {		// Value of the big blind
 			bigBlind = Integer.valueOf(value);
-		} else if( key.equals("on_button") ) {		// Which bot has the button, onButton is true if it's your bot
+		} else if( key.equals("onButton") ) {		// Which bot has the button, onButton is true if it's your bot
 			onButton = value.equals(myName);
-		} else if( key.equals("max_win_pot") ) {	// The size of the current pot
+		} else if( key.equals("maxWinPot") ) {	// The size of the current pot
 			pot = Integer.valueOf(value);
-		} else if( key.equals("amount_to_call") ) {	// The amount of the call
+		} else if( key.equals("amountToCall") ) {	// The amount of the call
 			amountToCall = Integer.valueOf(value);
 		} else if ( key.equals("table") ) {			// The cards on the table
 			table = parseCards(value);

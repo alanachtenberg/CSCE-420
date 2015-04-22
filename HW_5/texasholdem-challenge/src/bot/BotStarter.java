@@ -33,6 +33,8 @@ public class BotStarter implements Bot {
 	 */
 	@Override
 	public PokerMove getMove(BotState state, Long timeOut) {
+
+        //return new PokerMove(state.getMyName(), "call", state.getAmountToCall());/*
 		HandHoldem hand = state.getHand();
 		String handCategory = getHandCategory(hand, state.getTable()).toString();
 		System.err.printf("my hand is %s, opponent action is %s, pot: %d\n", handCategory, state.getOpponentAction(), state.getPot());
@@ -49,6 +51,7 @@ public class BotStarter implements Bot {
 		} else {
 			return new PokerMove(state.getMyName(), "check", 0);
 		}
+
 	}
 	
 	/**

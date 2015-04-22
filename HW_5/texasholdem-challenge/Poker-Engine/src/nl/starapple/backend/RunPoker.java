@@ -92,7 +92,7 @@ public class RunPoker
 
 		//gametype is omaha tournament (with two players):
 		//gameType = 18;
-		gameType=15;//15 is the texas hold em game type
+		gameType=13;//13 is the texas hold em game type
 		//number of hands is unlimited
 		numberOfHands = -1;
 		//one winner
@@ -273,7 +273,7 @@ public class RunPoker
         System.out.println("Winner: " + winner.getName());
         System.out.println("Score: " + score);
 
-        System.out.println("Visualization:");
+        //System.out.println("Visualization:");
         // System.out.println(getPlayedGame(this.engine.getHistory())); // output for visuals
 
         System.out.println("Bot 1 Errors: ");
@@ -281,12 +281,13 @@ public class RunPoker
 
         System.out.println("Bot 1 Dump: ");
         System.out.println(bot1.getDump());
-
+/*
         System.out.println("Bot 2 Errors: ");
         System.out.println(bot2.getStderr());
 
         System.out.println("Bot 2 Dump: ");
-        System.out.println(bot2.getDump());	
+        System.out.println(bot2.getDump());
+        */
 	}
 
 }
