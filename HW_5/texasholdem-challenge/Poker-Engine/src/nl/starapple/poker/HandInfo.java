@@ -83,10 +83,10 @@ public class HandInfo
 			{
 				//not needed in headsup
 				// str += String.format("Match totalPlayersLeft %d\n", playersLeft);
-				str += String.format("Match smallBlind %d\n", sizeSB);
-				str += String.format("Match bigBlind %d\n", sizeBB);
+				str += String.format("Match small_blind %d\n", sizeSB);
+				str += String.format("Match big_blind %d\n", sizeBB);
 			}
-			str += String.format("Match onButton %s\n", botCodeNames[buttonSeat]);
+			str += String.format("Match on_button %s\n", botCodeNames[buttonSeat]);
 			for(int i = 0; i < bots.size(); i++)
 				if(botStacks[i] > 0)
 					str += String.format("%s stack %d\n", botCodeNames[i], botStacks[i]);

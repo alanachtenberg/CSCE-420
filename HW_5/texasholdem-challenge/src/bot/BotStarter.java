@@ -13,6 +13,7 @@
 package bot;
 
 import poker.Card;
+import poker.Hand;
 import poker.HandHoldem;
 import poker.PokerMove;
 
@@ -33,25 +34,98 @@ public class BotStarter implements Bot {
 	 */
 	@Override
 	public PokerMove getMove(BotState state, Long timeOut) {
-
+        double random=Math.random()*100;//random value between 0 and 100
+        System.err.printf("random vale: %f\n",random);
+        int raiseAmount= (int)(Math.random()*50*state.getBigBlind());
         //return new PokerMove(state.getMyName(), "call", state.getAmountToCall());/*
 		HandHoldem hand = state.getHand();
 		String handCategory = getHandCategory(hand, state.getTable()).toString();
-		System.err.printf("my hand is %s, opponent action is %s, pot: %d\n", handCategory, state.getOpponentAction(), state.getPot());
-		
-		// Get the ordinal values of the cards in your hand
-		int height1 = hand.getCard(0).getHeight().ordinal();
-		int height2 = hand.getCard(1).getHeight().ordinal();
 
-		// Return the appropriate move according to our amazing strategy
-		if( height1 > 9 || height2 > 9 ) {
-			return new PokerMove(state.getMyName(), "raise", 2*state.getBigBlind());
-		} else if( height1 > 5 && height2 > 5 ) {
-			return new PokerMove(state.getMyName(), "call", state.getAmountToCall());
-		} else {
-			return new PokerMove(state.getMyName(), "check", 0);
-		}
+        if (state.getTable()==null||state.getTable().length==0) {//before the flop
+            if (handCategory.equals(HandEval.HandCategory.PAIR)) {//if we start with a pair
+                if (random < 70) {
+                    return new PokerMove(state.getMyName(), "raise", (int)(raiseAmount*Math.random()));// 70 percent chance to raise
+                }
+                if (random < 95) {
+                    return new PokerMove(state.getMyName(), "call", state.getAmountToCall());//25 percent chance to call
+                }
+                if (random < 100) {
+                    return new PokerMove(state.getMyName(), "check", 0);//5 percent chance to check
+                }
+            }
+            int height1 = hand.getCard(0).getHeight().ordinal();
+            int height2 = hand.getCard(1).getHeight().ordinal();
 
+            // Return the appropriate move according to our amazing strategy
+            if( height1 > 9 || height2 > 9 ) {
+                if (random < 20) {
+                    return new PokerMove(state.getMyName(), "raise", (int)(raiseAmount*Math.random()));// 20 percent chance to raise
+                }
+                if (random < 80) {
+                    return new PokerMove(state.getMyName(), "call", state.getAmountToCall());//60 percent chance to call
+                }
+                if (random < 100) {
+                    return new PokerMove(state.getMyName(), "check", 0);//20 percent chance to check
+                }
+            } else if( height1 > 5 && height2 > 5 ) {
+                if (random < 20) {
+                    return new PokerMove(state.getMyName(), "raise", (int)(raiseAmount*Math.random()));// 20 percent chance to raise
+                }
+                if (random < 70) {
+                    return new PokerMove(state.getMyName(), "call", state.getAmountToCall());//50 percent chance to call
+                }
+                if (random < 100) {
+                    return new PokerMove(state.getMyName(), "check", 0);//30 percent chance to check
+                }
+            } else {
+                if (random < 10) {
+                    return new PokerMove(state.getMyName(), "raise", (int)(raiseAmount*Math.random()));// 10 percent chance to raise
+                }
+                if (random < 30) {
+                    return new PokerMove(state.getMyName(), "call", state.getAmountToCall());//30 percent chance to call
+                }
+                if (random < 100) {
+                    return new PokerMove(state.getMyName(), "check", 0);//70 percent chance to check
+                }
+            }
+
+        }
+        //after the flop
+        if (handCategory.equals(HandEval.HandCategory.FLUSH)||handCategory.equals(HandEval.HandCategory.STRAIGHT_FLUSH)
+                || handCategory.equals(HandEval.HandCategory.FOUR_OF_A_KIND)|| handCategory.equals(HandEval.HandCategory.FULL_HOUSE)){
+            int oppStack=state.getOpponentStack();
+            if (oppStack>200) {
+                return new PokerMove(state.getMyName(), "raise", state.getOpponentStack() / 4);//raise a fourth of their stack, entice them
+            }
+            else
+                return new PokerMove(state.getMyName(),"raise",state.getOpponentStack());//if the have a small stack make them go all in
+        }
+        if (handCategory.equals(HandEval.HandCategory.STRAIGHT)){
+            if (random<50){
+                return new PokerMove(state.getMyName(),"raise",(int)(raiseAmount*Math.random()));
+            }
+            if (random<95){
+                return new PokerMove(state.getMyName(),"call",state.getAmountToCall());
+            }
+            return new PokerMove(state.getMyName(),"check",0);
+        }
+        if (handCategory.equals(HandEval.HandCategory.THREE_OF_A_KIND)||handCategory.equals(HandEval.HandCategory.TWO_PAIR)){
+            if (random<30){
+                return new PokerMove(state.getMyName(),"raise",(int)(raiseAmount*Math.random()));
+            }
+            if (random<60){
+                return new PokerMove(state.getMyName(),"call",state.getAmountToCall());
+            }
+            return new PokerMove(state.getMyName(),"check",0);
+        }
+
+        if (random<70) {
+            return new PokerMove(state.getMyName(), "check", 0);
+        }
+        if (random<90){
+            return new PokerMove(state.getMyName(),"call",0);
+        }
+        return new PokerMove(state.getMyName(),"raise",0);
 	}
 	
 	/**

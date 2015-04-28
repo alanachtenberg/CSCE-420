@@ -35,8 +35,8 @@ public class PreMoveInfo
 	{
 		String str = "";
 		
-		str += String.format("Match maxWinPot %d\n", maxWinPot);		
-		str += String.format("Match amountToCall %d", amountToCall);
+		str += String.format("Match max_win_pot %d\n", maxWinPot);
+		str += String.format("Match amount_to_call %d", amountToCall);
 		
 		return str;
 	}
