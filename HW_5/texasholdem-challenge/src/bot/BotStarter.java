@@ -23,7 +23,7 @@ import com.stevebrecher.HandEval;
  * This class is the brains of your bot. Make your calculations here and return the best move with GetMove
  */
 public class BotStarter implements Bot {
-
+    private int consecutiveRaises=0;
 	/**
 	 * Implement this method to return the best move you can. Currently it will return a raise the ordinal value
 	 * of one of our cards is higher than 9, a call when one of the cards has a higher ordinal value than 5 and
@@ -36,7 +36,7 @@ public class BotStarter implements Bot {
 	public PokerMove getMove(BotState state, Long timeOut) {
         double random=Math.random()*100;//random value between 0 and 100
         System.err.printf("random vale: %f\n",random);
-        int raiseAmount= (int)(Math.random()*50*state.getBigBlind());
+        int raiseAmount= (int)(Math.random()*50*state.getBigBlind())%500;
         //return new PokerMove(state.getMyName(), "call", state.getAmountToCall());/*
 		HandHoldem hand = state.getHand();
 		String handCategory = getHandCategory(hand, state.getTable()).toString();
@@ -44,7 +44,14 @@ public class BotStarter implements Bot {
         if (state.getTable()==null||state.getTable().length==0) {//before the flop
             if (handCategory.equals(HandEval.HandCategory.PAIR)) {//if we start with a pair
                 if (random < 70) {
-                    return new PokerMove(state.getMyName(), "raise", (int)(raiseAmount*Math.random()));// 70 percent chance to raise
+                    ++consecutiveRaises;
+                    if (consecutiveRaises<3) {
+                        return new PokerMove(state.getMyName(), "raise", (int) (raiseAmount * Math.random()));// 70 percent chance to raise
+                    }
+                    else{
+                        consecutiveRaises=0;
+                        return new PokerMove(state.getMyName(),"call",state.getAmountToCall());
+                    }
                 }
                 if (random < 95) {
                     return new PokerMove(state.getMyName(), "call", state.getAmountToCall());//25 percent chance to call
@@ -59,8 +66,14 @@ public class BotStarter implements Bot {
             // Return the appropriate move according to our amazing strategy
             if( height1 > 9 || height2 > 9 ) {
                 if (random < 20) {
-                    return new PokerMove(state.getMyName(), "raise", (int)(raiseAmount*Math.random()));// 20 percent chance to raise
-                }
+                    ++consecutiveRaises;
+                    if (consecutiveRaises<3) {
+                        return new PokerMove(state.getMyName(), "raise", (int) (raiseAmount * Math.random()));// 70 percent chance to raise
+                    }
+                    else{
+                        consecutiveRaises=0;
+                        return new PokerMove(state.getMyName(),"call",state.getAmountToCall());
+                    }                }
                 if (random < 80) {
                     return new PokerMove(state.getMyName(), "call", state.getAmountToCall());//60 percent chance to call
                 }
@@ -69,8 +82,14 @@ public class BotStarter implements Bot {
                 }
             } else if( height1 > 5 && height2 > 5 ) {
                 if (random < 20) {
-                    return new PokerMove(state.getMyName(), "raise", (int)(raiseAmount*Math.random()));// 20 percent chance to raise
-                }
+                    ++consecutiveRaises;
+                    if (consecutiveRaises<3) {
+                        return new PokerMove(state.getMyName(), "raise", (int) (raiseAmount * Math.random()));// 70 percent chance to raise
+                    }
+                    else{
+                        consecutiveRaises=0;
+                        return new PokerMove(state.getMyName(),"call",state.getAmountToCall());
+                    }                }
                 if (random < 70) {
                     return new PokerMove(state.getMyName(), "call", state.getAmountToCall());//50 percent chance to call
                 }
@@ -79,8 +98,14 @@ public class BotStarter implements Bot {
                 }
             } else {
                 if (random < 10) {
-                    return new PokerMove(state.getMyName(), "raise", (int)(raiseAmount*Math.random()));// 10 percent chance to raise
-                }
+                    ++consecutiveRaises;
+                    if (consecutiveRaises<3) {
+                        return new PokerMove(state.getMyName(), "raise", (int) (raiseAmount * Math.random()));// 70 percent chance to raise
+                    }
+                    else{
+                        consecutiveRaises=0;
+                        return new PokerMove(state.getMyName(),"call",state.getAmountToCall());
+                    }                }
                 if (random < 30) {
                     return new PokerMove(state.getMyName(), "call", state.getAmountToCall());//30 percent chance to call
                 }
@@ -102,8 +127,14 @@ public class BotStarter implements Bot {
         }
         if (handCategory.equals(HandEval.HandCategory.STRAIGHT)){
             if (random<50){
-                return new PokerMove(state.getMyName(),"raise",(int)(raiseAmount*Math.random()));
-            }
+                ++consecutiveRaises;
+                if (consecutiveRaises<3) {
+                    return new PokerMove(state.getMyName(), "raise", (int) (raiseAmount * Math.random()));// 70 percent chance to raise
+                }
+                else{
+                    consecutiveRaises=0;
+                    return new PokerMove(state.getMyName(),"call",state.getAmountToCall());
+                }            }
             if (random<95){
                 return new PokerMove(state.getMyName(),"call",state.getAmountToCall());
             }
@@ -118,14 +149,17 @@ public class BotStarter implements Bot {
             }
             return new PokerMove(state.getMyName(),"check",0);
         }
-
-        if (random<70) {
-            return new PokerMove(state.getMyName(), "check", 0);
+        if (state.getAmountToCall()<state.getmyStack()/8){
+            if (random<15) {//15 percent check and fold
+                return new PokerMove(state.getMyName(), "check", 0);
+            }
+            if (random<100){//15 percent call
+                return new PokerMove(state.getMyName(),"call",state.getAmountToCall());
+            }
         }
-        if (random<90){
-            return new PokerMove(state.getMyName(),"call",0);
-        }
-        return new PokerMove(state.getMyName(),"raise",0);
+        if (random<30)
+            return new PokerMove(state.getMyName(),"call",state.getAmountToCall());
+        return new PokerMove(state.getMyName(),"check",0);
 	}
 	
 	/**
