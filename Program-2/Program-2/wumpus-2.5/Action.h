@@ -9,7 +9,7 @@ using namespace std;
 
 enum Action {FORWARD, TURNLEFT, TURNRIGHT, GRAB, SHOOT, CLIMB};
 
-typedef vector<Action> ActionList;
+typedef std::vector<Action> ActionList;
 
 void PrintAction (Action action);
 
